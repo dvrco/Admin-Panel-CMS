@@ -227,5 +227,52 @@ namespace ShopingCardCMS.Areas.Admin.Controllers
 
             return RedirectToAction("EditSidebar");
         }
+
+        // dlt
+        [HttpPost]
+        public ActionResult EditTemplate(PageVM model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            using (Db db = new Db())
+            {
+                int id = model.Id;
+                string slug = "home";
+                PageDTO dto = db.Pages.Find(id);
+                dto.Title = model.Title;
+                if (model.Slug != "home")
+                {
+                    if (string.IsNullOrWhiteSpace(model.Slug))
+                    {
+                        slug = model.Title.Replace(" ", "-").ToLower();
+                    }
+                    else
+                    {
+                        slug = model.Slug.Replace(" ", "-").ToLower();
+                    }
+                }
+
+                if (db.Pages.Where(x => x.Id != id).Any(x => x.Title == model.Title) ||
+                    db.Pages.Where(x => x.Id != id).Any(x => x.Slug == slug))
+                {
+                    ModelState.AddModelError("", "That title or slug already exists.");
+                    return View(model);
+                }
+
+                dto.Slug = slug;
+                dto.Body = model.Body;
+                dto.HasSidebar = model.HasSidebar;
+
+                db.SaveChanges();
+
+                TempData["SM"] = "You have edited the page";
+
+                return RedirectToAction("EditPage");
+            }
+            return View();
+        }
     }
 }
